@@ -4,17 +4,24 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"github.com/nntch26/todo-app/backend/internal/domain"
 )
 
 // Connect opens the DB
 func Connect(dsn string) (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// TranslateError: turn Postgres errors into gorm.ErrDuplicatedKey etc.
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		TranslateError: true,
+		Logger:         newSafeLogger(),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}
@@ -30,6 +37,16 @@ func Connect(dsn string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 	return db, nil
+}
+
+// newSafeLogger logs SQL as "WHERE email = $1" (no values), so emails/hashes never reach the logs
+func newSafeLogger() logger.Interface {
+	return logger.New(log.New(os.Stdout, "", log.LstdFlags), logger.Config{
+		SlowThreshold:             200 * time.Millisecond,
+		LogLevel:                  logger.Warn,
+		IgnoreRecordNotFoundError: true, // "not found" is normal (e.g. login with unknown email)
+		ParameterizedQueries:      true,
+	})
 }
 
 // Migrate creates/updates tables.

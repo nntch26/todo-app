@@ -12,7 +12,9 @@ import (
 
 	"github.com/nntch26/todo-app/backend/internal/config"
 	"github.com/nntch26/todo-app/backend/internal/handler"
+	"github.com/nntch26/todo-app/backend/internal/middleware"
 	"github.com/nntch26/todo-app/backend/internal/repository"
+	"github.com/nntch26/todo-app/backend/internal/service"
 )
 
 func main() {
@@ -31,10 +33,22 @@ func main() {
 		log.Fatalf("database: %v", err)
 	}
 
-	app := fiber.New()
+	// Wire layers: repository -> service -> handler
+	authService := service.NewAuthService(repository.NewUserRepository(db), cfg.JWTSecret)
+	authHandler := handler.NewAuthHandler(authService)
+	requireAuth := middleware.RequireAuth(authService)
+
+	app := fiber.New(fiber.Config{ErrorHandler: handler.ErrorHandler})
 
 	// Register routes
-	app.Get("/api/health", handler.Health)
+	api := app.Group("/api")
+	api.Get("/health", handler.Health)
+
+	auth := api.Group("/auth")
+	auth.Post("/register", authHandler.Register)
+	auth.Post("/login", authHandler.Login)
+	auth.Post("/logout", requireAuth, authHandler.Logout) // middleware first: runs left to right
+	auth.Get("/me", requireAuth, authHandler.Me)
 
 	// Start server
 	go func() {

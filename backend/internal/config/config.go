@@ -13,9 +13,13 @@ import (
 )
 
 type Config struct {
-	Port string
-	DB   DB
+	Port      string
+	JWTSecret string
+	DB        DB
 }
+
+// minJWTSecretLen: HS256 needs a key of at least 256 bits (32 bytes)
+const minJWTSecretLen = 32
 
 type DB struct {
 	Host     string
@@ -38,6 +42,9 @@ func LoadConfig() (Config, error) {
 		// Server
 		Port: getEnvKey("APP_PORT", "8080"),
 
+		// Auth
+		JWTSecret: getEnvKey("JWT_SECRET", ""),
+
 		// Database
 		DB: DB{
 			Host:     getEnvKey("DB_HOST", ""),
@@ -47,6 +54,11 @@ func LoadConfig() (Config, error) {
 			Name:     getEnvKey("DB_NAME", ""),
 			SSLMode:  getEnvKey("DB_SSLMODE", "disable"),
 		},
+	}
+
+	// Empty/short secret = anyone can forge login tokens, so never start without it
+	if len(cfg.JWTSecret) < minJWTSecretLen {
+		return Config{}, fmt.Errorf("JWT_SECRET must be at least %d characters", minJWTSecretLen)
 	}
 
 	return cfg, nil

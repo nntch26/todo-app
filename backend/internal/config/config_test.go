@@ -14,6 +14,7 @@ func setValidEnv(t *testing.T) {
 	t.Setenv("DB_PASSWORD", "secret")
 	t.Setenv("DB_NAME", "todo")
 	t.Setenv("DB_SSLMODE", "disable")
+	t.Setenv("JWT_SECRET", strings.Repeat("x", 32))
 }
 
 // TestLoadConfig
@@ -26,6 +27,18 @@ func TestLoadConfig(t *testing.T) {
 	}
 	if cfg.Port != "8080" || cfg.DB.Host != "localhost" || cfg.DB.Password != "secret" {
 		t.Fatalf("unexpected config: %+v", cfg)
+	}
+}
+
+// TestLoadConfigJWTSecret checks that a missing or short secret stops startup
+func TestLoadConfigJWTSecret(t *testing.T) {
+	for _, secret := range []string{"", strings.Repeat("x", 31)} {
+		setValidEnv(t)
+		t.Setenv("JWT_SECRET", secret)
+
+		if _, err := LoadConfig(); err == nil {
+			t.Fatalf("expected error for secret of length %d", len(secret))
+		}
 	}
 }
 
