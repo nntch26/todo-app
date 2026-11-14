@@ -39,7 +39,6 @@ type updateTodoRequest struct {
 	DueDate     optionalDate `json:"due_date"`
 }
 
-//
 type optionalDate struct {
 	Set   bool
 	Value *string
@@ -153,7 +152,7 @@ func (h *TodoHandler) Update(c fiber.Ctx) error {
 		Done:        req.Done,
 	}
 
-	// due_date only 
+	// due_date only
 	if req.DueDate.Set {
 		dueDate, err := parseDueDate(req.DueDate.Value)
 		if err != nil {

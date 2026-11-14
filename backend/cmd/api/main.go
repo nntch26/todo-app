@@ -33,7 +33,6 @@ func main() {
 		log.Fatalf("database: %v", err)
 	}
 
-	
 	// Wire layers: repository (DB) -> service  -> handler (HTTP)
 	// Auth
 	userRepository := repository.NewUserRepository(db)
