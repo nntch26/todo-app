@@ -33,11 +33,20 @@ func main() {
 		log.Fatalf("database: %v", err)
 	}
 
-	// Wire layers: repository -> service -> handler
-	authService := service.NewAuthService(repository.NewUserRepository(db), cfg.JWTSecret)
+	
+	// Wire layers: repository (DB) -> service  -> handler (HTTP)
+	// Auth
+	userRepository := repository.NewUserRepository(db)
+	authService := service.NewAuthService(userRepository, cfg.JWTSecret)
 	authHandler := handler.NewAuthHandler(authService)
-	requireAuth := middleware.RequireAuth(authService)
+	requireAuth := middleware.RequireAuth(authService) // checks the login cookie
 
+	// Todo
+	todoRepository := repository.NewTodoRepository(db)
+	todoService := service.NewTodoService(todoRepository)
+	todoHandler := handler.NewTodoHandler(todoService)
+
+	// ErrorHandler turns every returned error into a JSON response
 	app := fiber.New(fiber.Config{ErrorHandler: handler.ErrorHandler})
 
 	// Register routes
@@ -50,6 +59,12 @@ func main() {
 	auth.Post("/logout", requireAuth, authHandler.Logout) // middleware first: runs left to right
 	auth.Get("/me", requireAuth, authHandler.Me)
 
+	todos := api.Group("/todos", requireAuth) // every todo route needs login
+	todos.Get("/", todoHandler.List)
+	todos.Post("/", todoHandler.Create)
+	todos.Patch("/:id", todoHandler.Update)
+	todos.Delete("/:id", todoHandler.Delete)
+
 	// Start server
 	go func() {
 		if err := app.Listen(":" + cfg.Port); err != nil {
@@ -57,7 +72,7 @@ func main() {
 		}
 	}()
 
-	//
+	// Wait for Ctrl+C / docker stop
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit

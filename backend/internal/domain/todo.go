@@ -12,6 +12,18 @@ type Todo struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 
-	// Belongs-to: makes AutoMigrate create the FK; deleting a user deletes their todos
 	User User `gorm:"constraint:OnDelete:CASCADE"`
+}
+
+// TodoPatch is a partial update; nil field = leave unchanged
+type TodoPatch struct {
+	Title       *string
+	Description *string
+	Done        *bool
+	DueDate     *DueDateChange
+}
+
+// DueDateChange: Date nil = remove the due date
+type DueDateChange struct {
+	Date *time.Time
 }

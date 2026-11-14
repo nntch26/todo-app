@@ -48,6 +48,9 @@ func fieldMessage(fe validator.FieldError) string {
 	case "email":
 		return fmt.Sprintf("%s must be a valid email", fe.Field())
 	case "min":
+		if fe.Param() == "1" {
+			return fmt.Sprintf("%s must not be empty", fe.Field())
+		}
 		return fmt.Sprintf("%s must be at least %s characters", fe.Field(), fe.Param())
 	case "max":
 		return fmt.Sprintf("%s must be at most %s characters", fe.Field(), fe.Param())
