@@ -1,7 +1,8 @@
 import type { z } from "zod";
 
-import { apiErrorSchema, userSchema } from "@/lib/schemas";
+import { apiErrorSchema, todoListSchema, todoSchema, userSchema } from "@/lib/schemas";
 import type { Credentials, User } from "@/types/auth";
+import type { Todo, TodoInput, TodoPatch } from "@/types/todo";
 
 // ApiError: a failed API call; message is safe to show to the user
 export class ApiError extends Error {
@@ -11,6 +12,18 @@ export class ApiError extends Error {
     super(message);
     this.status = status;
   }
+}
+
+// errorMessage: text to show the user for any error from these functions.
+// ApiError messages are safe to show; anything else is a bug, so show a generic message
+export function errorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    return error.message;
+  }
+
+  console.error(error); // keep the details for the developer console
+
+  return "Something went wrong. Please try again.";
 }
 
 // ---------- Helpers ----------
@@ -94,4 +107,38 @@ export async function getMe(): Promise<User> {
   const response = await send("/api/auth/me");
 
   return readBody(response, userSchema);
+}
+
+// ---------- Todos (all need login) ----------
+
+// listTodos GET /api/todos; newest first
+export async function listTodos(): Promise<Todo[]> {
+  const response = await send("/api/todos");
+
+  return readBody(response, todoListSchema);
+}
+
+// createTodo POST /api/todos
+export async function createTodo(input: TodoInput): Promise<Todo> {
+  const response = await send("/api/todos", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+
+  return readBody(response, todoSchema);
+}
+
+// updateTodo PATCH /api/todos/:id; only the fields in patch change
+export async function updateTodo(id: string, patch: TodoPatch): Promise<Todo> {
+  const response = await send(`/api/todos/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+
+  return readBody(response, todoSchema);
+}
+
+// deleteTodo DELETE /api/todos/:id
+export async function deleteTodo(id: string): Promise<void> {
+  await send(`/api/todos/${encodeURIComponent(id)}`, { method: "DELETE" });
 }

@@ -7,7 +7,7 @@ import { useState, type SubmitEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { ApiError, login, register } from "@/lib/api";
+import { errorMessage, login, register } from "@/lib/api";
 import { credentialsSchema } from "@/lib/schemas";
 import type { AuthFieldErrors, AuthMode } from "@/types/auth";
 
@@ -83,7 +83,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       // 3. Logged in: go to the todo list
       router.replace("/todos");
     } catch (error) {
-      setFormError(toMessage(error));
+      setFormError(errorMessage(error));
     } finally {
       setSubmitting(false);
     }
@@ -137,15 +137,4 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       </p>
     </Card>
   );
-}
-
-// toMessage: API errors are safe to show; anything else is a bug, so show a generic message
-function toMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    return error.message;
-  }
-
-  console.error(error); // keep the details for the developer console
-
-  return "Something went wrong. Please try again.";
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Button } from "@/components/ui/Button";
 import type { User } from "@/types/auth";
 
 type NavbarProps = {
@@ -22,13 +23,9 @@ export function Navbar({ user, onLogout }: NavbarProps) {
           {/* Hidden on small screens to save space */}
           <span className="hidden text-sm text-muted sm:inline">{user.email}</span>
 
-          <button
-            type="button"
-            onClick={onLogout}
-            className="rounded-full border border-border px-4 py-2 text-sm font-semibold transition-colors hover:border-accent hover:text-accent"
-          >
+          <Button variant="secondary" size="sm" onClick={onLogout}>
             Log out
-          </button>
+          </Button>
         </div>
       </nav>
     </header>
