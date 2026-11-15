@@ -7,7 +7,8 @@ const apiUrl = process.env.API_URL ?? "http://localhost:8080";
 new URL(apiUrl);
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Build a self-contained server in .next/standalone for the Docker image (frontend/Dockerfile)
+  output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

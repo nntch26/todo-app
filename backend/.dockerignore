@@ -1,0 +1,4 @@
+# Keep secrets and local builds out of the image
+.env
+.env.*
+*.exe

@@ -1,0 +1,9 @@
+# Installed / built inside the image instead
+node_modules
+.next
+
+# Keep secrets out of the image
+.env
+.env.*
+
+npm-debug.log*
