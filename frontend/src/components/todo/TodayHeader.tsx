@@ -18,7 +18,7 @@ export function TodayHeader({ now }: { now: Date }) {
 
       <div>
         <h1 className="text-2xl font-semibold">{greeting(now)}</h1>
-        <p className="text-muted">What&apos;s your plan for today?</p>
+        <p className="text-muted">Here's what's on your list today.</p>
       </div>
     </div>
   );
