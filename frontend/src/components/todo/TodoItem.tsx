@@ -4,7 +4,8 @@ import { useState } from "react";
 
 import { TodoForm } from "@/components/todo/TodoForm";
 import { errorMessage } from "@/lib/api";
-import { formatDueDate, toFormValues } from "@/lib/todo";
+import { todayString } from "@/lib/date";
+import { formatDueDate, isOverdue, toFormValues } from "@/lib/todo";
 import type { Todo, TodoFormValues } from "@/types/todo";
 
 export type TodoItemProps = {
@@ -22,6 +23,8 @@ export function TodoItem({ todo, onToggle, onSave, onDelete }: TodoItemProps) {
   const [mode, setMode] = useState<ItemMode>("view");
   const [busy, setBusy] = useState(false); // waiting for toggle / delete
   const [error, setError] = useState<string | null>(null);
+
+  const overdue = isOverdue(todo, todayString());
 
   // runAction: call toggle / delete, show the error on this card if it fails
   async function runAction(action: () => Promise<void>) {
@@ -81,7 +84,13 @@ export function TodoItem({ todo, onToggle, onSave, onDelete }: TodoItemProps) {
             <p className="mt-1 text-sm break-words whitespace-pre-line text-muted">{todo.description}</p>
           )}
 
-          {todo.due_date && <p className="mt-2 text-xs font-semibold text-accent">Due {formatDueDate(todo.due_date)}</p>}
+          {/* Due date: red + "Overdue" when it has passed and the task isn't done */}
+          {todo.due_date && (
+            <p className={`mt-2 text-xs font-semibold ${overdue ? "text-red-400" : "text-accent"}`}>
+              {overdue ? "Overdue · " : "Due "}
+              {formatDueDate(todo.due_date)}
+            </p>
+          )}
         </div>
       </div>
 
