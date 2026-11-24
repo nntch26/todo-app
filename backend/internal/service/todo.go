@@ -48,7 +48,6 @@ func (s *TodoService) Create(ctx context.Context, userID string, t domain.Todo) 
 }
 
 // Update changes only the fields set in the patch.
-// Sending the same patch twice gives the same result (idempotent).
 func (s *TodoService) Update(ctx context.Context, userID, id string, p domain.TodoPatch) (domain.Todo, error) {
 	// 1. Call repository: load the todo (ErrNotFound if missing or not this user's)
 	t, err := s.todos.FindByID(ctx, userID, id)
@@ -88,6 +87,6 @@ func (s *TodoService) Update(ctx context.Context, userID, id string, p domain.To
 
 // Delete removes the user's own todo (ErrNotFound if missing or not this user's)
 func (s *TodoService) Delete(ctx context.Context, userID, id string) error {
-	// Call repository: DELETE ... WHERE id = ? AND user_id = ?
+
 	return s.todos.Delete(ctx, userID, id)
 }
