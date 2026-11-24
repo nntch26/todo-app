@@ -56,7 +56,13 @@ func (s *TodoService) Update(ctx context.Context, userID, id string, p domain.To
 		return domain.Todo{}, err
 	}
 
-	// 2. Apply the patch in memory (no DB yet); nil = not sent = keep
+	// 2. Rule: a completed todo is read-only; only "done" may change (uncheck first, then edit)
+	editsContent := p.Title != nil || p.Description != nil || p.DueDate != nil
+	if t.Done && editsContent {
+		return domain.Todo{}, domain.ErrTodoDone
+	}
+
+	// 3. Apply the patch in memory (no DB yet); nil = not sent = keep
 	if p.Title != nil {
 		t.Title = *p.Title
 	}
@@ -70,13 +76,13 @@ func (s *TodoService) Update(ctx context.Context, userID, id string, p domain.To
 		t.DueDate = p.DueDate.Date // nil Date = remove the due date
 	}
 
-	// 3. Call repository: save the changes (UPDATE ... WHERE id = ? AND user_id = ?)
+	// 4. Call repository: save the changes (UPDATE ... WHERE id = ? AND user_id = ?)
 	err = s.todos.Update(ctx, &t)
 	if err != nil {
 		return domain.Todo{}, err
 	}
 
-	// 4. Call repository again: read back to get the new updated_at
+	// 5. Call repository again: read back to get the new updated_at
 	return s.todos.FindByID(ctx, userID, id)
 }
 

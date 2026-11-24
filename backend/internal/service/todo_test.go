@@ -183,6 +183,84 @@ func TestUpdateTodo(t *testing.T) {
 	})
 }
 
+// TestUpdateDoneTodo: a completed todo can't be edited; it can only be unchecked first
+func TestUpdateDoneTodo(t *testing.T) {
+	ctx := context.Background()
+
+	// Setup: alice's todo, marked done
+	newDoneTodo := func(t *testing.T) (*TodoService, domain.Todo) {
+		t.Helper()
+		s, todo := newTodoTest(t)
+
+		done := true
+		doneTodo, err := s.Update(ctx, "alice", todo.ID, domain.TodoPatch{Done: &done})
+		if err != nil {
+			t.Fatalf("setup: %v", err)
+		}
+
+		return s, doneTodo
+	}
+
+	newTitle := "changed"
+	newDescription := "changed"
+	newDue := time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	// Every patch that edits content must be rejected
+	rejected := []struct {
+		name  string
+		patch domain.TodoPatch
+	}{
+		{"title", domain.TodoPatch{Title: &newTitle}},
+		{"description", domain.TodoPatch{Description: &newDescription}},
+		{"change due date", domain.TodoPatch{DueDate: &domain.DueDateChange{Date: &newDue}}},
+		{"remove due date", domain.TodoPatch{DueDate: &domain.DueDateChange{Date: nil}}},
+	}
+
+	for _, tt := range rejected {
+		t.Run("rejects "+tt.name, func(t *testing.T) {
+			s, todo := newDoneTodo(t)
+
+			_, err := s.Update(ctx, "alice", todo.ID, tt.patch)
+			if !errors.Is(err, domain.ErrTodoDone) {
+				t.Fatalf("err = %v, want ErrTodoDone", err)
+			}
+
+			// Nothing may have been saved
+			aliceList, _ := s.List(ctx, "alice")
+			got := aliceList[0]
+
+			if got.Title != todo.Title || got.Description != todo.Description || got.DueDate == nil || !got.Done {
+				t.Errorf("todo changed: %+v", got)
+			}
+		})
+	}
+
+	t.Run("can be unchecked, then edited", func(t *testing.T) {
+		s, todo := newDoneTodo(t)
+
+		notDone := false
+		_, err := s.Update(ctx, "alice", todo.ID, domain.TodoPatch{Done: &notDone})
+		if err != nil {
+			t.Fatalf("uncheck: %v", err)
+		}
+
+		got, err := s.Update(ctx, "alice", todo.ID, domain.TodoPatch{Title: &newTitle})
+		if err != nil || got.Title != newTitle {
+			t.Errorf("edit after uncheck: got %+v, err %v", got, err)
+		}
+	})
+
+	t.Run("marking done again is still fine", func(t *testing.T) {
+		s, todo := newDoneTodo(t)
+
+		done := true
+		_, err := s.Update(ctx, "alice", todo.ID, domain.TodoPatch{Done: &done})
+		if err != nil {
+			t.Errorf("err = %v, want nil", err)
+		}
+	})
+}
+
 // TestDeleteTodo: only the owner can delete, and only once
 func TestDeleteTodo(t *testing.T) {
 	ctx := context.Background()

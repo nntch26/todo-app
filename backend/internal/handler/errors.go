@@ -19,7 +19,7 @@ func ErrorHandler(c fiber.Ctx, err error) error {
 		status, message = fe.Code, fe.Message
 	case errors.Is(err, domain.ErrNotFound):
 		status, message = fiber.StatusNotFound, "not found"
-	case errors.Is(err, domain.ErrEmailTaken):
+	case errors.Is(err, domain.ErrEmailTaken), errors.Is(err, domain.ErrTodoDone):
 		status, message = fiber.StatusConflict, err.Error()
 	case errors.Is(err, domain.ErrInvalidCredentials), errors.Is(err, domain.ErrInvalidToken):
 		status, message = fiber.StatusUnauthorized, err.Error()

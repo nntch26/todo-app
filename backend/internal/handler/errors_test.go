@@ -44,6 +44,7 @@ func TestErrorHandler(t *testing.T) {
 		{"internal error is hidden", errors.New("pq: password=secret host=db"), 500, `{"error":"internal server error"}`},
 		{"not found", fmt.Errorf("find: %w", domain.ErrNotFound), 404, `{"error":"not found"}`},
 		{"email taken", domain.ErrEmailTaken, 409, `{"error":"email already registered"}`},
+		{"todo done", domain.ErrTodoDone, 409, `{"error":"completed tasks can't be edited; mark it as not done first"}`},
 		{"bad credentials", domain.ErrInvalidCredentials, 401, `{"error":"invalid email or password"}`},
 		{"bad token", domain.ErrInvalidToken, 401, `{"error":"invalid or expired token"}`},
 		{"fiber error", fiber.NewError(400, "invalid JSON body"), 400, `{"error":"invalid JSON body"}`},
