@@ -23,7 +23,7 @@ func NewTodoRepository(db *gorm.DB) *TodoRepository {
 func (r *TodoRepository) ListByUser(ctx context.Context, userID string) ([]domain.Todo, error) {
 	todos := []domain.Todo{} // empty slice, so JSON is [] not null
 
-	// SELECT * FROM todos WHERE user_id = $1 ORDER BY created_at DESC
+
 	err := r.db.WithContext(ctx).
 		Where("user_id = ?", userID).
 		Order("created_at DESC").
@@ -34,7 +34,7 @@ func (r *TodoRepository) ListByUser(ctx context.Context, userID string) ([]domai
 
 // Create inserts a todo; the DB fills in ID, CreatedAt, UpdatedAt
 func (r *TodoRepository) Create(ctx context.Context, t *domain.Todo) error {
-	// INSERT INTO todos (...) VALUES (...)
+	
 	// Omit associations: don't let GORM also try to insert t.User
 	return r.db.WithContext(ctx).
 		Omit(clause.Associations).
@@ -45,7 +45,6 @@ func (r *TodoRepository) Create(ctx context.Context, t *domain.Todo) error {
 func (r *TodoRepository) FindByID(ctx context.Context, userID, id string) (domain.Todo, error) {
 	var t domain.Todo
 
-	// SELECT * FROM todos WHERE id = $1 AND user_id = $2 LIMIT 1
 	err := r.db.WithContext(ctx).
 		Where("id = ? AND user_id = ?", id, userID).
 		First(&t).Error
@@ -65,7 +64,6 @@ func (r *TodoRepository) Update(ctx context.Context, t *domain.Todo) error {
 		"done":        t.Done,
 	}
 
-	// UPDATE todos SET ..., updated_at = now WHERE id = $1 AND user_id = $2
 	result := r.db.WithContext(ctx).
 		Model(&domain.Todo{}).
 		Where("id = ? AND user_id = ?", t.ID, t.UserID).
@@ -76,7 +74,7 @@ func (r *TodoRepository) Update(ctx context.Context, t *domain.Todo) error {
 
 // Delete removes one todo, only if it belongs to userID
 func (r *TodoRepository) Delete(ctx context.Context, userID, id string) error {
-	// DELETE FROM todos WHERE id = $1 AND user_id = $2
+
 	result := r.db.WithContext(ctx).
 		Where("id = ? AND user_id = ?", id, userID).
 		Delete(&domain.Todo{})
